@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  title String
+  body String
+  comment Comment[]
+}
+
+model User{
+    id   String @id @default(auto()) @map("_id") @db.ObjectId
+    name String
+    comment Comment[]
+    likes Like[]
+}
+
+model Comment{
+    id   String @id @default(auto()) @map("_id") @db.ObjectId
+    message String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId String @db.ObjectId
+    post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+    postId String @db.ObjectId
+    parent Comment?  @relation("ParentChild", onDelete: NoAction, onUpdate: NoAction, fields: [parentId], references: [id])
+    children Comment[] @relation("ParentChild")
+    parentId String? @db.ObjectId
+    likes Like[] 
+
+
+}
+
+
+model Like{
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @db.ObjectId
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId String @db.ObjectId
+  count Int @default(0)
+  
+}
+
+
