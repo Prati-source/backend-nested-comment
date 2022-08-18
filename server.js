@@ -222,3 +222,4 @@ async function commitDb(promise) {
         return data
 }
 
+app.listen({port: process.env.PORT})
