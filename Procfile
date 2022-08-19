@@ -1,2 +1,2 @@
-worker: npm run devStart
-data: npx prisma generate
+web: npm run devStart
+data: npx prisma db push
