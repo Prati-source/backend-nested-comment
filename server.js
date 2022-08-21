@@ -11,7 +11,7 @@ dotenv.config();
 const app = fastify();
 app.register({url: process.env.MONGODB_URI})
 app.register(sensible); 
-app.register(cookie, { secret: process.env.COOKIE_SECRET})
+
 app.register(cors, { 
     origin: process.env.CLIENT_URL,
     credentials: true
