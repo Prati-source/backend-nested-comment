@@ -2,14 +2,14 @@ import fastify from "fastify";
 import sensible from "@fastify/sensible";
 import dotenv from "dotenv";
 import cookie from "@fastify/cookie";
-import url from "@fastify/mongodb";
+
 import cors from "@fastify/cors";
 import { PrismaClient } from "@prisma/client";
 dotenv.config();
 
 
 const app = fastify();
-app.register({url: process.env.MONGODB_URI})
+
 app.register(sensible); 
 
 app.register(cors, { 
