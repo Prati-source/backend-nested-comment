@@ -1,4 +1,4 @@
 worker: npm run start
 data: npx prisma db push
-generate: npx prisma generata
+generate: npx prisma generate
 dev: npm run devStart
