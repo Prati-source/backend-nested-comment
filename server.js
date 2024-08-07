@@ -12,10 +12,19 @@ const app = fastify();
 
 app.register(sensible); 
 app.register(cookie, { secret: process.env.COOKIE_SECRET})
-app.register(cors, { 
-    origin: process.env.CLIENT_URL,
-    credentials: true
-})
+if ( process.env.PROCESS === 'development')
+    {
+        app.register(cors, { 
+            origin: process.env.DEVELOPMENT_URL ,
+            credentials: true
+        })
+    }
+else{
+    app.register(cors, { 
+        origin: process.env.CLIENT_URL ,
+        credentials: true
+    })
+}
 const prisma = new PrismaClient()
 const COMMENT_SELECT_FIELDS =  {
     id: true,
@@ -30,17 +39,16 @@ const COMMENT_SELECT_FIELDS =  {
     }
 }
 app.addHook("onRequest", (req,res, done) => {
-    
-    if(req.cookies.userId !== CURRENT_USER.id){
-        req.cookies.userId = CURRENT_USER.id
+   
+    if(req.cookies.userId === undefined){
+        req.cookies.userId = "guest"
         res.clearCookie("userId")
-        res.setCookie("userId", CURRENT_USER.id)
+        res.setCookie("userId", "guest")
     }
     done()
 
 })
 
-const CURRENT_USER = ( await  prisma.User.findFirst({ where: { name: "Kyle"}}))
 
 
 
@@ -48,7 +56,8 @@ app.get("/posts", async (req, res) => {
     
     return await commitDb( prisma.post.findMany({select: {
         id: true,
-        title: true
+        title: true,
+       
     }})
  
                                                                                                                                           
@@ -74,6 +83,7 @@ app.get("/posts/:id", async (req, res) => {
  
                                                                                                                                           
     ).then(async post => {
+        if(req.cookies.userId !== 'guest'){
         const likes = await prisma.Like.findMany({
             where: {userId: req.cookies.userId ,
                 commentId: { in: post.comment.map(comment => comment.id)}}
@@ -93,7 +103,11 @@ app.get("/posts/:id", async (req, res) => {
 
             })
         }
-    } )
+    }
+        else{
+            return post
+        }        
+} )
 })
 
 
@@ -213,12 +227,87 @@ app.post("/posts/:id/comments/:commentId/togglelike", async(req, res)=> {
 
 })
 
+app.post("/register", async (req, res) => {
+    
+    if(req.body.password === "" || req.body.password == null){
+        return res.send(app.httpErrors.badRequest("password is required"))
+    }
+
+        prisma.$connect()
+        let User = await   commitDb( prisma.user.create({
+            data: {
+                name: req.body.username,
+                password: req.body.password,
+            
+            },
+            select: {
+                name: true,
+                password: true,
+                id: true,
+            },
+            
+
+         
+        }))
+        return User
+
+           
+        prisma.$disconnect()
+    
+ 
+                                                                                                                                          
+    
+})
+
+app.post("/login", async (req, res, done) => {
+    
+    if(req.body.password === "" || req.body.password == null){
+        return res.send(app.httpErrors.badRequest("password is required"))
+    }
+        
+        prisma.$connect()
+        let User = await   commitDb( prisma.user.findFirst({
+               where: {
+                name: req.body.username
+
+               },
+               select:{
+                id:true,
+                name:true,
+                password:true,
+
+               }
+
+        }))
+        console.log(User.id)
+        if(User.password === req.body.password){
+            res.clearCookie("userId")
+            res.setCookie("userId", User.id)
+           return res.send(User)
+           
+                   
+                    
+
+        }
+        else{
+            return res.send({'error':'Incorrect Password'})
+        }
+
+
+           
+        prisma.$disconnect()
+    
+ 
+                                                                                                                                          
+    
+})
 
 
 
 
 async function commitDb(promise) {
     const [error,data] = await app.to(promise)
+    
     if (error) 
         return  ( app.httpErrors.internalServerError(error))
         return data

@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client"
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
   await prisma.$connect()
@@ -20,8 +20,8 @@ async function main() {
     },
   })
 
-  const kyle = await prisma.user.create({ data: { name: "Kyle" } })
-  const sally = await prisma.user.create({ data: { name: "Sally" } })
+  const kyle = await prisma.user.create({ data: { name: "Kyle",password: "kyle" } })
+  const sally = await prisma.user.create({ data: { name: "Sally",password: "sally" } })
 
   const post1 = await prisma.post.create({
     data: {
