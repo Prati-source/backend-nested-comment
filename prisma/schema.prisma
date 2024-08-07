@@ -10,12 +10,7 @@ datasource db {
   url      = env("MONGODB_URI")
 }
 
-model Post {
-  id      String    @id @default(auto()) @map("_id") @db.ObjectId
-  title   String
-  body    String
-  comment Comment[]
-}
+
 
 model User {
   id       String    @id @default(auto()) @map("_id") @db.ObjectId
@@ -23,6 +18,16 @@ model User {
   comment  Comment[]
   likes    Like[]
   password String
+  post     Post[]
+}
+
+model Post {
+  id      String    @id @default(auto()) @map("_id") @db.ObjectId
+  title   String
+  body    String
+  comment Comment[]
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String   @db.ObjectId  
 }
 
 model Comment {

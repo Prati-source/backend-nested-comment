@@ -2,7 +2,7 @@ import fastify from "fastify";
 import sensible from "@fastify/sensible";
 import dotenv from "dotenv";
 import cookie from "@fastify/cookie";
-
+import CryptoJS  from "crypto-js";
 import cors from "@fastify/cors";
 import { PrismaClient } from "@prisma/client";
 dotenv.config();
@@ -62,6 +62,32 @@ app.get("/posts", async (req, res) => {
  
                                                                                                                                           
     )
+})
+
+app.post("/postcreate", async (req,res) => {
+
+    if(req.body.postbody === "" || req.body.postbody == null || req.body.title ==="" || req.body.title === null){
+        return res.send(app.httpErrors.badRequest("Post body and title is required"))
+    }
+    prisma.$connect()
+    return await commitDb( prisma.post.create({
+        data: {
+            body: req.body.postbody,
+            title: req.body.title,
+            authorId: req.cookies.userId,
+        },
+        select: {
+            id:true,
+            title:true,
+            body:true,
+            author:{
+                select:{
+                    id:true,
+                    name:true,
+                }
+            }   
+        }
+    }))
 })
 
 app.get("/posts/:id", async (req, res) => {
@@ -232,12 +258,12 @@ app.post("/register", async (req, res) => {
     if(req.body.password === "" || req.body.password == null){
         return res.send(app.httpErrors.badRequest("password is required"))
     }
-
+        
         prisma.$connect()
         let User = await   commitDb( prisma.user.create({
             data: {
                 name: req.body.username,
-                password: req.body.password,
+                password: CryptoJS.SHA256(req.body.password).toString(),
             
             },
             select: {
@@ -280,7 +306,7 @@ app.post("/login", async (req, res, done) => {
 
         }))
         console.log(User.id)
-        if(User.password === req.body.password){
+        if(User.password === CryptoJS.SHA256(req.body.password).toString()){
             res.clearCookie("userId")
             res.setCookie("userId", User.id)
            return res.send(User)
