@@ -5,6 +5,7 @@ import cookie from "@fastify/cookie";
 import CryptoJS  from "crypto-js";
 import cors from "@fastify/cors";
 import { PrismaClient } from "@prisma/client";
+import { empty } from "@prisma/client/runtime/library";
 dotenv.config();
 
 
@@ -42,8 +43,11 @@ app.addHook("onRequest", (req,res, done) => {
    
     if(req.cookies.userId === undefined){
         req.cookies.userId = "guest"
+        req.cookies.name = "anonymous"
         res.clearCookie("userId")
+        res.clearCookie("name")
         res.setCookie("userId", "guest")
+        res.setCookie("name","anonymous")
     }
     done()
 
@@ -89,6 +93,61 @@ app.post("/postcreate", async (req,res) => {
         }
     }))
 })
+
+app.get("/expense", async(req,res)=>{
+    prisma.$connect()
+    
+    if(await commitDb(prisma.user.findUnique({
+        where:{
+            id: req.cookies.userId
+        }})))
+           {
+            return await commitDb(prisma.expense.findMany({where: {
+                employeeId: req.cookies.userId
+            }}, {select: {
+                id: true,
+                description:true,
+                category:true,
+                Status: true,
+                location:true,
+                client:true,
+                paymentMethod: true,
+                amount:true,
+                taxAmount:true,
+                createdAt:true
+                }   }))
+           }
+        
+    else
+        prisma.$disconnect()
+        return res.send(app.httpErrors.badGateway("Invalid expense of user"))
+})
+
+app.post("/expensecreate/add", async(req,res)=>{
+    console.log("hello world")
+    prisma.$connect()
+    console.log(res.body)
+    if(req.cookies.userId !== "guest")   
+            return  await commitDb(prisma.expense.create({
+            data: {
+                category:req.body.category,
+                description: req.body.description,
+                client: req.body.client,
+                paymentMethod: req.body.payMeth,
+                Status: req.body.status,
+                location: req.body.location,
+                amount: req.body.amount,
+                taxAmount: req.body.taxAmt,
+                employeeId: req.cookies.userId,
+            }
+        }))
+    else
+        prisma.$disconnect()
+        return res.send(app.httpErrors.badRequest("data is corrupted"))
+})
+
+
+
 
 app.get("/posts/:id", async (req, res) => {
     
@@ -308,7 +367,9 @@ app.post("/login", async (req, res, done) => {
         console.log(User.id)
         if(User.password === CryptoJS.SHA256(req.body.password).toString()){
             res.clearCookie("userId")
+            res.clearCookie("name")
             res.setCookie("userId", User.id)
+            res.setCookie("name",User.name)
            return res.send(User)
            
                    

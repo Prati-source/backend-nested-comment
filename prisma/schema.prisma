@@ -10,7 +10,21 @@ datasource db {
   url      = env("MONGODB_URI")
 }
 
+model Expense {
+  id      String    @id @db.ObjectId @default(auto()) @map("_id")
+  createdAt   DateTime   @default(now())
+  description   String
+  client  String
+  paymentMethod String
+  amount  Float
+  employee  User @relation(fields: [employeeId], references: [id], onDelete:Cascade)
+  employeeId  String @db.ObjectId
+  Status  String
+  taxAmount   Float?
+  category  String
+  location  String
 
+}
 
 model User {
   id       String    @id @default(auto()) @map("_id") @db.ObjectId
@@ -19,6 +33,7 @@ model User {
   likes    Like[]
   password String
   post     Post[]
+  expense  Expense[]
 }
 
 model Post {

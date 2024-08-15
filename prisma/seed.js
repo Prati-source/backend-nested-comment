@@ -26,6 +26,19 @@ async function main() {
     },
   })
 
+  await prisma.expense.create({
+    data:{
+      client: "babu" ,
+      category: "factory",
+      description:  "karch",
+      amount: 500,
+      taxAmount: 0,
+      location: "bengaluru",
+      paymentMethod:  "Cash",
+      Status: "Paid",
+      employeeId: sally.id
+    }
+  })
 
   const post1 = await prisma.post.create({
     data: {
