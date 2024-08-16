@@ -11,6 +11,7 @@
     "devStart": "nodemon server.js",
     "start": "node server.js",
     "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon server.js"
+    "build": "node build --output public"
   },
   "keywords": [],
   "author": "",
