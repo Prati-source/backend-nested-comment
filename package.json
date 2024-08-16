@@ -10,9 +10,9 @@
   "scripts": {
     "devStart": "nodemon server.js",
     "start": "node server.js",
-    "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon server.js"
-    "build": "node build --output public"
-    "postinstall": "prisma generate"
+    "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon server.js",
+    "build": "node build --output public",
+    "postinstall": "prisma generate",
   },
   "keywords": [],
   "author": "",
