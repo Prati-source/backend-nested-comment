@@ -1,5 +1,5 @@
 FROM node:20
-WORKDIR /app
+WORKDIR /api
 COPY package*.json ./
 RUN npm start
 COPY . ./
