@@ -1,1 +1,9 @@
-{ "version": 2, "rewrites": [{ "source": "/(.*)", "destination": "/prisma" }] }
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "Dockerfile",
+      "use": "@vercel/docker"
+    }
+  ]
+}
