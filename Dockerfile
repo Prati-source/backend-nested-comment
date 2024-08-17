@@ -1,7 +1,7 @@
 FROM node:20
-WORKDIR /api
+WORKDIR .
 COPY package*.json ./
-RUN npm start
+RUN npm install
 COPY . ./
 EXPOSE 3500
 CMD ["node", "index.js"]
