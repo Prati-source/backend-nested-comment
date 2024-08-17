@@ -10,7 +10,8 @@
   "scripts": {
     "devStart": "nodemon api/index.js",
     "start": "node api/index.js",
-    "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon index.js"
+    "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon index.js",
+    "postinstall": "prisma generate"
     
   },
   "keywords": [],
