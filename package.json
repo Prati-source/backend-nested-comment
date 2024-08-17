@@ -10,7 +10,8 @@
   "scripts": {
     "devStart": "nodemon api/index.js",
     "start": "node api/index.js",
-    "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon index.js"
+    "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon index.js",
+    "postinstall": "prisma generate"
     
   },
   "keywords": [],
@@ -29,7 +30,7 @@
     "@fastify/cors": "^8.1.0",
     "@fastify/mongodb": "^6.0.1",
     "@fastify/sensible": "^5.1.0",
-    "@prisma/client": "^5.16.2",
+    "@prisma/client": "^5.18.0",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.0.1",
     "fastify": "^4.3.0",
