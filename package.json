@@ -11,7 +11,8 @@
     "devStart": "nodemon prisma/server.js",
     "start": "node prisma/server.js",
     "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon server.js",
-    "postinstall": "prisma generate"
+    "vercel-build": "prisma generate && prisma migrate deploy ",
+    "prisma:generate": "prisma generate"
   },
   "keywords": [],
   "author": "",
