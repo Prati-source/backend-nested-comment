@@ -5,9 +5,8 @@ import cookie from "@fastify/cookie";
 import CryptoJS  from "crypto-js";
 import cors from "@fastify/cors";
 import { PrismaClient } from "@prisma/client";
-import { empty } from "@prisma/client/runtime/library";
-dotenv.config();
 
+dotenv.config();
 
 const app = fastify();
 
