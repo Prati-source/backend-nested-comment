@@ -4,4 +4,4 @@ COPY package*.json ./
 COPY . ./
 RUN npm install
 EXPOSE 3500
-CMD ["node", "index.js"]
+CMD ["node", "api/index.js"]
