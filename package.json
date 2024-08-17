@@ -6,7 +6,7 @@
     "npm": "10.7.0",
     "node": "20.15.1"
   },
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "devStart": "nodemon prisma/server.js",
     "start": "node prisma/server.js",
