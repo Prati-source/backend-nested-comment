@@ -7,8 +7,6 @@ import cors from "@fastify/cors";
 
 import { PrismaClient } from './generated/client/index.js';
 
-dotenv.config();
-
 
 dotenv.config();
 
