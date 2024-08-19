@@ -10,10 +10,6 @@ import { PrismaClient } from './generated/client/index.js';
 
 dotenv.config();
 
-
-
-dotenv.config();
-
 const app = fastify();
 
 app.register(sensible); 
