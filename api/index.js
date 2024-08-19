@@ -43,7 +43,6 @@ const COMMENT_SELECT_FIELDS =  {
 app.addHook("onRequest", (req,res, done) => {
    
     if(req.cookies.userId === undefined){
-
         res.setCookie("userId", "guest")
         res.setCookie("name","anonymous")
     }
