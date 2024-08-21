@@ -43,8 +43,8 @@ const COMMENT_SELECT_FIELDS =  {
 app.addHook("onRequest", (req,res, done) => {
    
     if(req.cookies.userId === undefined){
-        res.setCookie("userId", "guest",{path:'/',sameSite:'none'})
-        res.setCookie("name","anonymous",{path:'/',sameSite:'none'})
+        res.setCookie("userId", "guest",{path:'/',sameSite:'none',secure:true})
+        res.setCookie("name","anonymous",{path:'/',sameSite:'none',secure:true})
     }
     done()
 
@@ -366,8 +366,8 @@ app.post("/login", async (req, res, done) => {
         console.log(User.password)
         if(User.password === CryptoJS.SHA256(req.body.password).toString()){
            
-            res.setCookie("userId", User.id,{path:'/' ,sameSite:'none'})
-            res.setCookie("name",User.name,{path:'/',sameSite:'none'})
+            res.setCookie("userId", User.id,{path:'/' ,sameSite:'none',secure:true})
+            res.setCookie("name",User.name,{path:'/',sameSite:'none',secure:true})
            return res.send(User)
            
                    
