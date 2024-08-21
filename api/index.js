@@ -364,8 +364,8 @@ app.post("/login", async (req, res, done) => {
         console.log(User.password)
         if(User.password === CryptoJS.SHA256(req.body.password).toString()){
            
-            res.setCookie("userId", User.id,{path:'/' })
-            res.setCookie("name",User.name,{path:'/'})
+            res.setCookie("userId", User.id,{path:'/login' })
+            res.setCookie("name",User.name,{path:'/login'})
            return res.send(User)
            
                    
