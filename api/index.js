@@ -13,7 +13,7 @@ dotenv.config();
 const app = fastify();
 
 app.register(sensible); 
-app.register(cookie, { secret: process.env.COOKIE_SECRET})
+app.register(cookie, { secret: process.env.COOKIE_SECRET,path: '/',secure:true,sameSite:'lax'})
 if ( process.env.PROCESS === 'development')
     {
         app.register(cors, { 
@@ -43,8 +43,8 @@ const COMMENT_SELECT_FIELDS =  {
 app.addHook("onRequest", (req,res, done) => {
    
     if(req.cookies.userId === undefined){
-        res.setCookie("userId", "guest",{path:'/',sameSite:'none',secure:true})
-        res.setCookie("name","anonymous",{path:'/',sameSite:'none',secure:true})
+        res.setCookie("userId", "guest")
+        res.setCookie("name","anonymous")
     }
     done()
 
@@ -366,8 +366,8 @@ app.post("/login", async (req, res, done) => {
         console.log(User.password)
         if(User.password === CryptoJS.SHA256(req.body.password).toString()){
            
-            res.setCookie("userId", User.id,{path:'/' ,sameSite:'none',secure:true})
-            res.setCookie("name",User.name,{path:'/',sameSite:'none',secure:true})
+            res.setCookie("userId", User.id)
+            res.setCookie("name",User.name)
            return res.send(User)
            
                    
