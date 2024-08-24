@@ -4,8 +4,8 @@ import dotenv from "dotenv";
 import cookie from "@fastify/cookie";
 import CryptoJS  from "crypto-js";
 import cors from "@fastify/cors";
-
 import { PrismaClient } from './generated/client/index.js';
+import jwt from '@fastify/jwt'
 
 
 dotenv.config();
@@ -13,7 +13,7 @@ dotenv.config();
 const app = fastify();
 
 app.register(sensible); 
-app.register(cookie, { secret: process.env.COOKIE_SECRET,path: '/',secure:true,sameSite:'lax'})
+app.register(cookie, { secret: process.env.COOKIE_SECRET,path: '/',secure:true,sameSite:'restrict'})
 if ( process.env.PROCESS === 'development')
     {
         app.register(cors, { 
@@ -27,6 +27,18 @@ else{
         credentials: true
     })
 }
+
+app.register(jwt, {
+    secret: process.env.JWT_SECRET,
+    sign: {
+      expiresIn: '1d',
+      algorithm:'HS256' // expires in 1 hour
+    },
+    verify:{
+        expiresIn:'1d',
+        algorithms:'HS256'
+    }
+  });
 const prisma = new PrismaClient()
 const COMMENT_SELECT_FIELDS =  {
     id: true,
@@ -68,12 +80,15 @@ app.get("/posts", async (req, res) => {
 })
 
 app.post("/postcreate", async (req,res) => {
-
+    
     if(req.body.postbody === "" || req.body.postbody == null || req.body.title ==="" || req.body.title === null){
         return res.send(app.httpErrors.badRequest("Post body and title is required"))
     }
-    prisma.$connect()
-    return await commitDb( prisma.post.create({
+    try{
+        const decode= app.jwt.verify(req.body.tn)
+        console.log(decode)
+        prisma.$connect()
+        return await commitDb( prisma.post.create({
         data: {
             body: req.body.postbody,
             title: req.body.title,
@@ -91,6 +106,18 @@ app.post("/postcreate", async (req,res) => {
             }   
         }
     }))
+    }
+    catch(err){
+        console.log(err)
+    }
+})
+
+app.get("/logout",  async(req,res)=>{
+   
+    res.clearCookie("userId")
+    res.clearCookie("name")
+    res.clearCookie("token")
+    return  res.send({'signed':'Logged out'})
 })
 
 app.get("/expense", async(req,res)=>{
@@ -363,12 +390,12 @@ app.post("/login", async (req, res, done) => {
                }
 
         }))
-        console.log(User.password)
+        const token = app.jwt.sign({User})
         if(User.password === CryptoJS.SHA256(req.body.password).toString()){
-           
+            res.setCookie("token",token,{  maxAge: 86400000 })
             res.setCookie("userId", User.id)
             res.setCookie("name",User.name)
-           return res.send(User)
+           return res.send({'signed':'Logedd In'})
            
                    
                     
