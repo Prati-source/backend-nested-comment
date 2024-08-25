@@ -13,7 +13,7 @@ dotenv.config();
 const app = fastify();
 
 app.register(sensible); 
-app.register(cookie, { secret: process.env.COOKIE_SECRET,path: '/',secure:true,sameSite:'restrict'})
+app.register(cookie, { secret: process.env.COOKIE_SECRET})
 if ( process.env.PROCESS === 'development')
     {
         app.register(cors, { 
@@ -54,9 +54,9 @@ const COMMENT_SELECT_FIELDS =  {
 }
 app.addHook("onRequest", (req,res, done) => {
    
-    if(req.cookies.userId === undefined){
-        res.setCookie("userId", "guest")
-        res.setCookie("name","anonymous")
+    if(req.cookies === undefined){
+        res.setCookie("userId", "guest",{path:'/',secure:true,sameSite:'lax',secret:true})
+        res.setCookie("name","anonymous",{path:'/',secure:true,sameSite:'lax',secret:true})
     }
     done()
 
@@ -392,11 +392,15 @@ app.post("/login", async (req, res, done) => {
         }))
         const token = app.jwt.sign({User})
         if(User.password === CryptoJS.SHA256(req.body.password).toString()){
-            res.setCookie("token",token,{  maxAge: 86400000 })
-            res.setCookie("userId", User.id)
-            res.setCookie("name",User.name)
+            if(req.body.remember === true){
+                res.setCookie("token",token,{maxAge: 86400000,secure:true,sameSite:'lax',path:'/'})//10 Days
+            }else{
+            res.setCookie("token",token,{  maxAge: 8640000,secure:true,sameSite:'lax',path:'/' })//1 Day
+            }
+            res.setCookie("userId", User.id,{path:'/',secure:true,sameSite:'lax'})
+            res.setCookie("name",User.name,{path:'/',secure:true,sameSite:'lax'})
            return res.send({'signed':'Logedd In'})
-           
+            
                    
                     
 
