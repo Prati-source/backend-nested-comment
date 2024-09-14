@@ -8,6 +8,7 @@ import { PrismaClient } from './generated/client/index.js';
 import jwt from '@fastify/jwt'
 
 
+
 dotenv.config();
 
 const app = fastify();
@@ -54,9 +55,8 @@ const COMMENT_SELECT_FIELDS =  {
 }
 app.addHook("onRequest", (req,res, done) => {
    
-    if(req.cookies === undefined){
-        res.setCookie("userId", "guest",{path:'/',secure:true,sameSite:'lax',secret:true})
-        res.setCookie("name","anonymous",{path:'/',secure:true,sameSite:'lax',secret:true})
+    if(req.cookies.name === undefined){
+        res.setCookie("name","anonymous",{path:'/',secure:true,sameSite:'none',secret:true,expires:100})
     }
     done()
 
@@ -85,14 +85,14 @@ app.post("/postcreate", async (req,res) => {
         return res.send(app.httpErrors.badRequest("Post body and title is required"))
     }
     try{
-        const decode= app.jwt.verify(req.body.tn)
+        const decode= app.jwt.verify(req.body.token)
         console.log(decode)
         prisma.$connect()
         return await commitDb( prisma.post.create({
         data: {
             body: req.body.postbody,
             title: req.body.title,
-            authorId: req.cookies.userId,
+            authorId: decode.User.id,
         },
         select: {
             id:true,
@@ -108,13 +108,13 @@ app.post("/postcreate", async (req,res) => {
     }))
     }
     catch(err){
-        console.log(err)
+        res.clearCookie()
+        return res.send({error:'Invalid'})
     }
 })
 
 app.get("/logout",  async(req,res)=>{
    
-    res.clearCookie("userId")
     res.clearCookie("name")
     res.clearCookie("token")
     return  res.send({'signed':'Logged out'})
@@ -122,14 +122,14 @@ app.get("/logout",  async(req,res)=>{
 
 app.get("/expense", async(req,res)=>{
     prisma.$connect()
-    
+    const decode= app.jwt.verify(req.cookies.token)
     if(await commitDb(prisma.user.findUnique({
         where:{
-            id: req.cookies.userId
+            id: decode.User.id
         }})))
            {
             return await commitDb(prisma.expense.findMany({where: {
-                employeeId: req.cookies.userId
+                employeeId: decode.User.id
             }}, {select: {
                 id: true,
                 description:true,
@@ -150,10 +150,11 @@ app.get("/expense", async(req,res)=>{
 })
 
 app.post("/expensecreate/add", async(req,res)=>{
-    console.log("hello world")
+
+    const decode= app.jwt.verify(req.body.token)
     prisma.$connect()
-    console.log(res.body)
-    if(req.cookies.userId !== "guest")   
+    if(req.cookies.name !== "anonymous") 
+        { 
             return  await commitDb(prisma.expense.create({
             data: {
                 category:req.body.category,
@@ -164,15 +165,51 @@ app.post("/expensecreate/add", async(req,res)=>{
                 location: req.body.location,
                 amount: req.body.amount,
                 taxAmount: req.body.taxAmt,
-                employeeId: req.cookies.userId,
+                employeeId: decode.User.id,
             }
-        }))
+        }))}
     else
         prisma.$disconnect()
         return res.send(app.httpErrors.badRequest("data is corrupted"))
 })
 
+app.get("/posts/own", async (req,res)=>{
+    try{
+        const decode= app.jwt.verify(req.cookies.token)
+        prisma.$connect()
+        return  commitDb(prisma.post.findMany({
+            where:{
+                authorId:decode.User.id
+            },
+            select:{
+                id:true,
+                title:true,
+                body:true
+            }
+        }))
+    }catch(err){
+        res.send({errro:"Have not Created any Posts"})
+    }
+})
 
+
+app.delete("/posts/:id", async (req,res) =>{
+    try{
+        const decode = app.jwt.verify(req.body.token)
+        prisma.$connect()
+        return await commitDb(prisma.post.delete({
+            where:  {
+                authorId: decode.User.id,
+                id: req.params.id
+            },select:{
+                id:true
+            }
+
+        }))
+    }catch(err){
+        res.send({error:"Cannot Delete Wrong User"})
+    }
+})
 
 
 app.get("/posts/:id", async (req, res) => {
@@ -194,7 +231,7 @@ app.get("/posts/:id", async (req, res) => {
  
                                                                                                                                           
     ).then(async post => {
-        if(req.cookies.userId !== 'guest'){
+        if(req.cookies.name !== 'anonymous'){
         const likes = await prisma.Like.findMany({
             where: {userId: req.cookies.userId ,
                 commentId: { in: post.comment.map(comment => comment.id)}}
@@ -337,6 +374,28 @@ app.post("/posts/:id/comments/:commentId/togglelike", async(req, res)=> {
     }
 
 })
+app.post("/melting",async (req,res)=>{
+    try{
+    const decode= app.jwt.verify(req.cookies.token)
+    console.log(req.body)
+    prisma.$connect()
+    return await   commitDb(prisma.melting.create({
+        data:{
+            Purpose: req.body.melt.purpose,
+            Ghatti_wgt: req.body.melt.ghatti,
+            Pure_wgt:   req.body.melt.pure,
+            Chura_wgt:  req.body.melt.chura,
+            Melted_wgt: req.body.melt.melted,
+            Remark: req.body.melt.remark,
+            userId: decode.User.id
+        },select:{
+            Purpose:true
+        }
+    }))
+    }catch(err){
+        res.send({error:"error format"})
+    }
+})
 
 app.post("/register", async (req, res) => {
     
@@ -366,7 +425,7 @@ app.post("/register", async (req, res) => {
         prisma.$disconnect()
     
  
-                                                                                                                                          
+                                                                                                                                         
     
 })
 
@@ -393,12 +452,11 @@ app.post("/login", async (req, res, done) => {
         const token = app.jwt.sign({User})
         if(User.password === CryptoJS.SHA256(req.body.password).toString()){
             if(req.body.remember === true){
-                res.setCookie("token",token,{maxAge: 86400000,secure:true,sameSite:'lax',path:'/'})//10 Days
+                res.setCookie("token",token,{maxAge: 86400000,secure:true,sameSite:'none',path:'/'})//10 Days
             }else{
-            res.setCookie("token",token,{  maxAge: 8640000,secure:true,sameSite:'lax',path:'/' })//1 Day
+            res.setCookie("token",token,{  maxAge: 8640000,secure:true,sameSite:'none',path:'/' })//1 Day
             }
-            res.setCookie("userId", User.id,{path:'/',secure:true,sameSite:'lax'})
-            res.setCookie("name",User.name,{path:'/',secure:true,sameSite:'lax'})
+            res.setCookie("name",User.name,{path:'/',secure:true,sameSite:'none',maxAge:8640000})
            return res.send({'signed':'Logedd In'})
             
                    
@@ -418,8 +476,78 @@ app.post("/login", async (req, res, done) => {
     
 })
 
+app.post("/client/create",async    (req,res)=>{
+    try{
+        const decode= app.jwt.verify(req.body.token)
+        prisma.$connect()
+        if(await   commitDb(prisma.customer.findUnique({
+            where:{
+                name:   req.body.client.name,
+                type:   req.body.client.type
+            }
+        }))){
+            return  res.send({error:"Cannot set Client name as it is altrady occupied"})
+        }
+        return await   commitDb(prisma.customer.create({
+            data:{
+                name:req.body.client.name,
+                type:   req.body.client.type,
+                Part:   req.body.client.part,
+                Balance: 0,
+                userId:decode.User.id
+            },select:{
+                name:true
+            }
+        }))
+        }catch(err){
+            res.send({error:"error format"})
+        }
+})
 
+app.post("/client/get",async    (req,res)=>{
+    try{
+        
+        const decode= app.jwt.verify(req.body.token)
+        if(req.body.type !== ""){ 
+        prisma.$connect()
+        return await   commitDb(prisma.customer.findMany({
+            where:{
+                type:   req.body.type,
+                userId: decode.User.id
+            },select:{
+                name:true,
+                id:true
+            }
+        }))}
+        }catch(err){
+            res.send({error:"error format"})
+        }
+})
 
+app.post("/client/item",    async   (req,res)=>{
+    try{
+        const decode= app.jwt.verify(req.body.token)
+        prisma.$connect()
+        return await   commitDb(prisma.item.create({
+            data:{
+                name:   req.body.item.name,
+                type:   req.body.item.type,
+                Item_wgt:   req.body.item.gross,
+                Pure_wgt:   req.body.item.pure,
+                Touch:  req.body.item.touch,
+                Testing_wgt:req.body.item.test,
+                Return_wgt:     req.body.item.return,
+                Remark: req.body.item.remark,
+                customer: req.body.item.customer
+
+            },select:{
+                name:true
+            }
+        }))
+        }catch(err){
+            res.send({error:"error format"})
+        }
+})
 
 async function commitDb(promise) {
     const [error,data] = await app.to(promise)
@@ -430,3 +558,5 @@ async function commitDb(promise) {
 }
 
 app .listen({port: process.env.PORT || '3000', host: process.env.HOST || '0.0.0.0'})
+
+
