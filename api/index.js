@@ -457,7 +457,7 @@ app.post("/login", async (req, res, done) => {
             res.setCookie("token",token,{  maxAge: 8640000,secure:true,sameSite:'none',path:'/' })//1 Day
             }
             res.setCookie("name",User.name,{path:'/',secure:true,sameSite:'none',maxAge:8640000})
-           return res.send({'signed':'Logedd In','token':token})
+           return res.send({'signed':'Logedd In','token':token,'name':req.boq.name})
             
                    
                     
@@ -538,7 +538,7 @@ app.post("/client/item",    async   (req,res)=>{
                 Testing_wgt:req.body.item.test,
                 Return_wgt:     req.body.item.return,
                 Remark: req.body.item.remark,
-                customer: req.body.item.customer
+                customerId: req.body.item.customerId
 
             },select:{
                 name:true
