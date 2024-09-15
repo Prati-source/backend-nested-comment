@@ -457,7 +457,7 @@ app.post("/login", async (req, res, done) => {
             res.setCookie("token",token,{  maxAge: 8640000,secure:true,sameSite:'none',path:'/' })//1 Day
             }
             res.setCookie("name",User.name,{path:'/',secure:true,sameSite:'none',maxAge:8640000})
-           return res.send({'signed':'Logedd In','token':token,'name':req.boq.name})
+           return res.send({'signed':'Logedd In','token':token,'name':req.body.username})
             
                    
                     
