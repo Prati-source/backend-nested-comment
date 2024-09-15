@@ -6,10 +6,10 @@
     "npm": "10.7.0",
     "node": "20.15.1"
   },
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
     "devStart": "nodemon api/index.js",
-    "build": "node api/index.js",
+    "start": "node api/index.js",
     "dev": "PORT=${PORT:=3000} HOST=${HOST:=localhost} nodemon index.js",
     "postinstall": "prisma generate"
   },
