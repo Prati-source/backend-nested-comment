@@ -56,7 +56,7 @@ const COMMENT_SELECT_FIELDS =  {
 app.addHook("onRequest", (req,res, done) => {
    
     if(req.cookies.name === undefined){
-        res.setCookie("name","anonymous",{path:'/',secure:true,sameSite:'none',secret:true,maxAge:8640000})
+        res.setCookie("name","anonymous",{path:'/',secure:true,sameSite:"none",secret:true,maxAge:8640000})
     }
     done()
 
@@ -264,28 +264,33 @@ app.post("/posts/:id/comments", async (req, res) => {
     if(req.body.message === "" || req.body.message == null){
         return res.send(app.httpErrors.badRequest("Message is required"))
     }
-        prisma.$connect()
-        return await   commitDb( prisma.comment.create({
-                data: {
-                    message: req.body.message,
-                    parentId: req.body.parentId,
-                    postId: req.body.postId,
-                    userId: req.cookies.userId,
+       try {
+         const decode= app.jwt.verify(req.body.token)
+         prisma.$connect()
+         return await   commitDb( prisma.comment.create({
+                 data: {
+                     message: req.body.message,
+                     parentId: req.body.parentId,
+                     postId: req.body.postId,
+                     userId: decode.User.id,
+                 
+                 },
+                 select: COMMENT_SELECT_FIELDS,
                 
-                },
-                select: COMMENT_SELECT_FIELDS,
-               
-
-             
-            })).then(
-                comment => {
-                    return {
-                        ...comment,
-                        likeCount: 0,
-                        likedByMe: false
-                    }
-                }
-            )
+ 
+              
+             })).then(
+                 comment => {
+                     return {
+                         ...comment,
+                         likeCount: 0,
+                         likedByMe: false
+                     }
+                 }
+             )
+       } catch (error) {
+            res.send({"error":error.code})
+       }
         prisma.$disconnect()
     
  
@@ -298,12 +303,13 @@ app.put("/posts/:id/comments/:commentId", async (req,res) => {
     if(req.body.message ==="" || req.body.message === null){
         return res.send(app.httpErrors.badRequest("Messsage is required"))
     }
+    const decode= app.jwt.verify(req.body.token)
     prisma.$connect()
     const { userId } = await prisma.comment.findUnique({
         where: {id: req.params.commentId},
         select: {userId: true}
     })
-    if(userId !== req.cookies.userId){
+    if(userId !== decode.User.id){
         return res.send(app.httpErrors.unauthorized("You do not have permission to edit this message"))
     }
     return await commitDb(prisma.comment.update({
@@ -516,7 +522,8 @@ app.post("/client/get",async    (req,res)=>{
                 userId: decode.User.id
             },select:{
                 name:true,
-                id:true
+                id:true,
+                Balance:true
             }
         }))}
         }catch(err){
@@ -528,7 +535,7 @@ app.post("/client/item",    async   (req,res)=>{
     try{
         const decode= app.jwt.verify(req.body.token)
         prisma.$connect()
-        return await   commitDb(prisma.item.create({
+         await   commitDb(prisma.item.create({
             data:{
                 name:   req.body.item.name,
                 type:   req.body.item.type,
@@ -540,14 +547,130 @@ app.post("/client/item",    async   (req,res)=>{
                 Remark: req.body.item.remark,
                 customerId: req.body.item.customerId
 
-            },select:{
-                name:true
             }
+            
         }))
+        if(req.body.item.type === 'Customer')
+        {
+        return  await   commitDb(prisma.customer.update({
+            where:{id:req.body.item.customerId},
+            data:{
+                Balance:{
+                    increment:req.body.item.pure
+                }
+            },
+            select:{
+                Balance:true
+            }
+        }))}
+        if(req.body.item.type === "Supplier"){
+            return  await   commitDb(prisma.customer.update({
+                where:{id:req.body.item.customerId},
+                data:{
+                    Balance:{
+                        increment:req.body.item.pure
+                    }
+                },select:{
+                    Balance:true
+                }
+            }))
+        }
         }catch(err){
-            res.send({error:"error format"})
+            res.send({error:err})
         }
 })
+
+app.post("/client/item/get",async    (req,res)=>{
+    try{
+        const decode= app.jwt.verify(req.body.token)
+        prisma.$connect()
+        return await   commitDb(prisma.user.findUnique({
+            where:{
+                id:decode.User.id
+            },
+            select:{
+                customer:{
+                    select:{
+                        name:true,
+                        item:true
+                    }
+                }
+            }
+        }))
+       
+    }catch(error){
+        res.send({'error':error})
+    }
+})
+
+app.post("/client/collection/create",async(req,res)=>{
+    try{
+        const decode= app.jwt.verify(req.body.token)
+        prisma.$connect()
+         await   commitDb(prisma.collection.create({
+            data:{
+                type:   req.body.collection.type,
+                Ghatti_wgt:   req.body.collection.gross,
+                Pure_wgt:   req.body.collection.pure,
+                Remark: req.body.collection.remark,
+                customerId: req.body.collection.customerId
+
+            }
+            
+        }))
+        if(req.body.collection.type === 'Customer')
+        {
+        return  await   commitDb(prisma.customer.update({
+            where:{id:req.body.collection.customerId},
+            data:{
+                Balance:{
+                    decrement:req.body.collection.pure
+                }
+            },
+            select:{
+                Balance:true
+            }
+        }))}
+        if(req.body.collection.type === "Supplier"){
+            return  await   commitDb(prisma.customer.update({
+                where:{id:req.body.collection.customerId},
+                data:{
+                    Balance:{
+                        decrement:req.body.collection.pure
+                    }
+                },select:{
+                    Balance:true
+                }
+            }))
+        }
+        }catch(err){
+            res.send({error:err})
+        }
+})
+
+app.post("/client/collection/get",  async (req,res)=>{
+    try{
+        const decode= app.jwt.verify(req.body.token)
+        prisma.$connect()
+        return await   commitDb(prisma.user.findUnique({
+            where:{
+                id:decode.User.id
+            },
+            select:{
+                customer:{
+                    select:{
+                        name:true,
+                        collection:true
+                    }
+                }
+            }
+        }))
+       
+    }catch(error){
+        res.send({'error':error})
+    }
+})
+
 
 async function commitDb(promise) {
     const [error,data] = await app.to(promise)

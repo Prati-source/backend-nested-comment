@@ -78,7 +78,7 @@ model Customer{
   id  String  @id@default(auto()) @map("_id") @db.ObjectId
   type String
   name  String
-  Balance Float
+  Balance Float @default(0)
   Part  String 
   item  Item[]
   collection  Collection[]
@@ -133,6 +133,7 @@ model Collection{
   Ghatti_wgt  Int
   Pure_wgt    Int
   Remark  String?
+  createdAt   DateTime  @default(now())
   customer  Customer  @relation(fields: [customerId],references: [id])
   customerId  String  @db.ObjectId
 }
