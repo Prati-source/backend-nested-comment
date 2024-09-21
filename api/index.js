@@ -120,9 +120,9 @@ app.get("/logout",  async(req,res)=>{
     return  res.send({'signed':'Logged out'})
 })
 
-app.get("/expense", async(req,res)=>{
+app.post("/expense/get", async(req,res)=>{
     prisma.$connect()
-    const decode= app.jwt.verify(req.cookies.token)
+    const decode= app.jwt.verify(req.body.token)
     if(await commitDb(prisma.user.findUnique({
         where:{
             id: decode.User.id
@@ -175,7 +175,7 @@ app.post("/expensecreate/add", async(req,res)=>{
 
 app.get("/posts/own", async (req,res)=>{
     try{
-        const decode= app.jwt.verify(req.cookies.token)
+        const decode= app.jwt.verify(req.body.token)
         prisma.$connect()
         return  commitDb(prisma.post.findMany({
             where:{
@@ -188,7 +188,7 @@ app.get("/posts/own", async (req,res)=>{
             }
         }))
     }catch(err){
-        res.send({errro:"Have not Created any Posts"})
+        res.send({error:err.code})
     }
 })
 
@@ -207,7 +207,7 @@ app.delete("/posts/:id", async (req,res) =>{
 
         }))
     }catch(err){
-        res.send({error:"Cannot Delete Wrong User"})
+        res.send({error:err.code})
     }
 })
 
@@ -399,7 +399,7 @@ app.post("/melting",async (req,res)=>{
         }
     }))
     }catch(err){
-        res.send({error:"error format"})
+        res.send({error:err.code})
     }
 })
 
@@ -527,7 +527,7 @@ app.post("/client/get",async    (req,res)=>{
             }
         }))}
         }catch(err){
-            res.send({error:"error format"})
+            res.send({error:err.code})
         }
 })
 
@@ -576,7 +576,7 @@ app.post("/client/item",    async   (req,res)=>{
             }))
         }
         }catch(err){
-            res.send({error:err})
+            res.send({"error":err.code})
         }
 })
 
@@ -599,7 +599,7 @@ app.post("/client/item/get",async    (req,res)=>{
         }))
        
     }catch(error){
-        res.send({'error':error})
+        res.send({'error':error.code})
     }
 })
 
@@ -644,7 +644,7 @@ app.post("/client/collection/create",async(req,res)=>{
             }))
         }
         }catch(err){
-            res.send({error:err})
+            res.send({"error":err.code})
         }
 })
 
@@ -667,7 +667,7 @@ app.post("/client/collection/get",  async (req,res)=>{
         }))
        
     }catch(error){
-        res.send({'error':error})
+        res.send({'error':error.code})
     }
 })
 
